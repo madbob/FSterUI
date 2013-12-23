@@ -1,0 +1,15 @@
+FSterUI - Configuration tool for FSter filesystem
+===============================================================================
+
+FSter is a virtual filesystem built on FUSE, able to dispose contents fetched
+from Tracker according to a flexible XML configuration.
+
+FSterUI is a graphical, web-based tool to easy configuration of the desired
+hierarchy.
+
+COPYRIGHT AND LICENSING
+-------------------------------------------------------------------------------
+FSterUI is released under the terms of the GNU General Public License, version 3
+or, at your option, any later version.
+
+FSterUI is Copyright (C) 2013  Roberto Guido <roberto.guido@linux.it>
