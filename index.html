@@ -3,20 +3,24 @@
 	<head>
 		<title>FSter Configuration Tool</title>
 
-		<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
-		<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
-		<script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+		<script src="js/jquery-1.9.1.js"></script>
+		<script src="js/jquery-ui.js"></script>
+		<script src="js/bootstrap.js"></script>
 		<script src="js/fster.js"></script>
 
-		<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css">
-		<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
+		<link rel="stylesheet" href="css/jquery-ui.css">
+		<link rel="stylesheet" href="css/bootstrap.css">
 
 		<style>
 
+		body {
+			background-color: #EFEFEF;
+		}
+
 		.mywell {
 			min-height: 20px;
-			padding: 19px;
-			margin-bottom: 10px;
+			padding: 10px;
+			margin: 2px;
 			border: 1px solid #000;
 			background-color: #FFF;
 			border-radius: 4px;
@@ -63,7 +67,9 @@
 			<br />
 
 			<div class="row">
-				<a class="btn btn-primary download" />Download this Configuration</a>
+				<div class="col-xs-8 col-md-8">
+					<a class="btn btn-primary download" />Download this Configuration</a>
+				</div>
 			</div>
 
 			<br />

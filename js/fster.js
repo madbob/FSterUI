@@ -8,11 +8,11 @@ $(document).ready (function () {
 			"type": "static_folder",
 		},
 		{
-			"text": "A folder named [METADATA] for each item matching [FILTER]",
+			"text": "A folder named [METADATA]\n for each item matching [FILTER]",
 			"type": "folder",
 		},
 		{
-			"text": "A folder for each value of [METADATA] found in items matching [FILTER]",
+			"text": "A folder for each value of [METADATA]\n found in items matching [FILTER]",
 			"type": "set_folder",
 		},
 		{
@@ -23,19 +23,20 @@ $(document).ready (function () {
 
 	var leafs = [
 		{
-			"text": "A file named [METADATA] for each item matching [FILTER]",
+			"text": "A file named [METADATA]\n for each item matching [FILTER]",
 			"type": "file",
 		}
 	];
 
-	/*
-		TODO: fetch available metadata for actual source, and handle datatypes
-	*/
-	$.getJSON ('data/metadata.json', function (data) {
+	$.getJSON ('/search', function (data) {
 		metadata = new Array ();
 
-		for (i = 0; i < data.length; i++)
-			metadata.push (data [i].label);
+		for (i = 0; i < data.length; i++) {
+			n = data [i][0];
+			n = n.replace ('#', ':');
+			n = n.substr (n.lastIndexOf ('/') + 1);
+			metadata.push (n);
+		}
 	});
 
 	initShelf (containers, 'containers', 'fold');
@@ -134,6 +135,7 @@ function activateDrop (event, ui) {
 		node = ui.draggable.clone ();
 
 		desc = node.find ('p').text ();
+		desc = desc.replace ("\n", "<br />");
 		desc = desc.replace ("[STRING]", commonInput (''));
 		desc = desc.replace ("[PATH]", commonInput ('filepath'));
 		desc = desc.replace ("[METADATA]", commonInput ('metadata'));
@@ -167,6 +169,7 @@ function activateDrop (event, ui) {
 function initShelf (data, parent, myclass) {
 	for (i = 0; i < data.length; i++) {
 		c = data [i];
+
 		$('#' + parent).append ('<div class="' + myclass + ' mywell">\
 						<p>' + c.text + '</p>\
 						<input type="hidden" name="type" value="' + c.type + '" />\
