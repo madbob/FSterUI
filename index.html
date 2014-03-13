@@ -39,42 +39,52 @@
 	</head>
 	<body>
 		<div class="container">
-			<div class="row hidden-xs hidden-sm">
-				<div class="page-header">
-					<h1>FSter Configuration Tool <small>semantic filemanagement made simple</small></h1>
-				</div>
-
-				<div class="alert alert-info">Drag the items from the right, and edit parameters on the left.</div>
-			</div>
-
-			<div class="row">
-				<div class="col-xs-8 col-md-8">
-					<div id="root" class="mywell">
-						<h4>root</h4>
-						<input type="hidden" name="type" value="root" />
-					</div>
-				</div>
-
-				<div class="col-xs-4 col-md-4 inventory">
-					<div id="containers">
-					</div>
-
-					<div id="leafs">
-					</div>
-				</div>
-			</div>
-
 			<br />
 
-			<div class="row">
-				<div class="col-xs-8 col-md-8">
-					<button class="btn btn-primary btn-lg" data-toggle="modal" data-target="#saveModal">
-						Save this Configuration
-					</button>
+			<ul class="nav nav-tabs" id="tabs">
+				<li class="active"><a href="#list" data-toggle="tab">List</a></li>
+				<li><a href="#create" data-toggle="tab">Create</a></li>
+			</ul>
+
+			<div class="tab-content">
+				<div class="tab-pane active" id="list">
+					<br />
+
+					<ul class="list-group" id="confslist">
+					</ul>
+				</div>
+
+				<div class="tab-pane" id="create">
+					<br />
+
+					<div class="row">
+						<div class="col-xs-8 col-md-8">
+							<div id="root" class="mywell">
+								<h4>root</h4>
+								<input type="hidden" name="type" value="root" />
+							</div>
+						</div>
+
+						<div class="col-xs-4 col-md-4 inventory">
+							<div id="containers">
+							</div>
+
+							<div id="leafs">
+							</div>
+						</div>
+					</div>
+
+					<br />
+
+					<div class="row">
+						<div class="col-xs-8 col-md-8">
+							<button class="btn btn-primary btn-lg" data-toggle="modal" data-target="#saveModal">
+								Save this Configuration
+							</button>
+						</div>
+					</div>
 				</div>
 			</div>
-
-			<br />
 		</div>
 
 		<div class="modal fade" id="saveModal" tabindex="-1" role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true">

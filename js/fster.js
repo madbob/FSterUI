@@ -39,8 +39,33 @@ $(document).ready (function () {
 		}
 	});
 
+	$.getJSON ('/browse', function (data) {
+		for (i = 0; i < data.length; i++)
+			addConfFile (data[i]);
+	});
+
 	initShelf (containers, 'containers', 'fold');
 	initShelf (leafs, 'leafs', 'leaf');
+
+	$('#tabs a').click(function (e) {
+		e.preventDefault();
+		$(this).tab('show');
+	})
+
+	$('#confslist').on ('click', '.runbutton', function () {
+		var name = $(this).parent ().attr ('id');
+		$.post ('/open', {confname: name}, function () {});
+	});
+
+	$('#confslist').on ('click', '.deletebutton', function () {
+		var name = $(this).parent ().attr ('id');
+
+		if (confirm ('Are you sure you want to remove the "' + name + '" configuration?')) {
+			$.post ('/remove', {confname: name}, function (resp) {
+				$('#confslist #' + resp).remove ();
+			});
+		}
+	});
 
 	$('#containers div').draggable ({
 		delay: 200,
@@ -102,6 +127,8 @@ $(document).ready (function () {
 				$('.modal-body').empty ().append ('<h3>Configuration saved!</h3>\
 					<p>To use it, run:</p><p>fster -c ' + resp + ' /your/preferred/mountpoint</p>\
 					<p>Or <a class="runbutton" id="' + name + '">click here to open in your file manager</a>.</p>');
+
+				addConfFile (name);
 			}
 		});
 	});
@@ -113,8 +140,15 @@ $(document).ready (function () {
 
 	$('#saveModal').on('hidden.bs.modal', function (e) {
 		$('.modal-body').empty ().append ('<input type="text" name="saveconfname" placeholder="Name of new file" />');
-	})
+	});
 });
+
+function addConfFile (name) {
+	$('#confslist').append ('<li class="list-group-item" id="' + name + '">' + name + '\
+					<button type="button" class="runbutton pull-right btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span> Run</button>\
+					<button type="button" class="deletebutton pull-right btn btn-default btn-xs"><span class="glyphicon glyphicon-remove-circle"></span> Delete</button>\
+				</li>');
+}
 
 function startDrag (event, ui) {
 	$(this).css ('position', 'relative');

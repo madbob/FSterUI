@@ -2,7 +2,7 @@
 
 import threading
 import time
-import os.path
+import os
 import subprocess
 
 import dbus
@@ -20,7 +20,6 @@ class TndServer (object):
 		bus = dbus.SessionBus()
 		tracker = bus.get_object('org.freedesktop.Tracker1', '/org/freedesktop/Tracker1/Resources')
 		self.dbusclient = dbus.Interface(tracker, dbus_interface='org.freedesktop.Tracker1.Resources')
-		return
 
 	def search(self):
 		query = "SELECT ?a WHERE {?a a rdf:Property}"
@@ -28,6 +27,20 @@ class TndServer (object):
 		return json.dumps(response)
 
 	search.exposed = True
+
+	def browse(self):
+		path = os.path.expanduser("~/.fster/confs/")
+		confs = [ f for f in os.listdir(path) if os.path.isfile(os.path.join(path,f)) ]
+		return json.dumps(confs)
+
+	browse.exposed = True
+
+	def remove(self, confname):
+		path = os.path.expanduser("~/.fster/confs/" + confname)
+		os.remove(path)
+		return confname
+
+	remove.exposed = True
 
 	def save(self, contents, name):
 		path = os.path.expanduser("~/.fster/confs/" + name)
@@ -64,6 +77,9 @@ class TndServerThread (threading.Thread):
 		conf = {'/css': {'tools.staticdir.on': True,
 		                'tools.staticdir.dir': os.path.join(current_dir, 'css')}}
 
+		conf = {'/fonts': {'tools.staticdir.on': True,
+		                'tools.staticdir.dir': os.path.join(current_dir, 'fonts')}}
+
 		conf = {'/': {'tools.staticdir.on': True,
 		              'tools.staticdir.dir': current_dir}}
 
@@ -82,7 +98,7 @@ class Browser:
 		gobject.threads_init()
 		self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 		self.window.set_resizable(False)
-		self.window.set_size_request(600, 500)
+		self.window.set_size_request(600, 600)
 		self.window.connect("delete_event", self.delete_event)
 		self.window.connect("destroy", self.destroy)
 
@@ -109,7 +125,7 @@ if __name__ == '__main__':
 
 	# This is to permit the CherryPy server to init
 	# Probably some better method exists...
-	time.sleep(3)
+	time.sleep(2)
 
 	browser = Browser()
 	browser.main()
