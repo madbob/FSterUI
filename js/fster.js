@@ -87,9 +87,33 @@ $(document).ready (function () {
 		}
 	});
 
-	$('.download').click (function () {
+	$('#saveConf').click (function () {
+		var name = $('input[name=saveconfname]').val ();
+		if (name == "")
+			return;
+
 		var contents = downloadableConf ();
+
+		$.post ('/save', {contents: contents, name: name}, function (resp) {
+			if (resp == '0') {
+				$('.modal-body').empty ().append ('<div class="alert alert-danger">An error occurred saving the file!</div>');
+			}
+			else {
+				$('.modal-body').empty ().append ('<h3>Configuration saved!</h3>\
+					<p>To use it, run:</p><p>fster -c ' + resp + ' /your/preferred/mountpoint</p>\
+					<p>Or <a class="runbutton" id="' + name + '">click here to open in your file manager</a>.</p>');
+			}
+		});
 	});
+
+	$('#saveModal').on ('click', '.runbutton', function () {
+		var name = $(this).attr ('id');
+		$.get ('/open', {confname: name}, function () {});
+	});
+
+	$('#saveModal').on('hidden.bs.modal', function (e) {
+		$('.modal-body').empty ().append ('<input type="text" name="saveconfname" placeholder="Name of new file" />');
+	})
 });
 
 function startDrag (event, ui) {
@@ -252,6 +276,6 @@ function downloadableConf () {
 
 	string += downloadableConfRec ($('#root'));
 	string += '</exposing_tree></conf>';
-	window.open ('data:application/xml;charset=utf-8,' + encodeURIComponent(string));
+	return string;
 }
 

@@ -3,6 +3,7 @@
 import threading
 import time
 import os.path
+import subprocess
 
 import dbus
 import json
@@ -25,7 +26,33 @@ class TndServer (object):
 		query = "SELECT ?a WHERE {?a a rdf:Property}"
 		response = self.dbusclient.SparqlQuery(query)
 		return json.dumps(response)
+
 	search.exposed = True
+
+	def save(self, contents, name):
+		path = os.path.expanduser("~/.fster/confs/" + name)
+
+		try:
+			out_file = open(path,"w")
+			out_file.write(contents)
+			out_file.close()
+			return path
+		except IOError:
+			return "0"
+
+	save.exposed = True
+
+	def open(self, confname):
+		confpath = os.path.expanduser("~/.fster/confs/" + confname)
+
+		mountpath = os.path.expanduser("~/.fster/mountpoints/" + confname)
+		if not os.path.isdir(mountpath):
+			os.makedirs(mountpath)
+
+		subprocess.call(('fster', '-c', confpath, mountpath))
+		subprocess.call(('xdg-open', mountpath))
+
+	open.exposed = True
 
 class TndServerThread (threading.Thread):
 	def run(self):
@@ -69,6 +96,14 @@ class Browser:
 		gtk.main()
 
 if __name__ == '__main__':
+	path = os.path.expanduser("~/.fster/confs/")
+	if not os.path.isdir(path):
+		os.makedirs(path)
+
+	path = os.path.expanduser("~/.fster/mountpoints/")
+	if not os.path.isdir(path):
+		os.makedirs(path)
+
 	t = TndServerThread ()
 	t.start ()
 
