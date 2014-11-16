@@ -1,5 +1,6 @@
 var startingParent;
 var metadata;
+var host = 'http://localhost:8080';
 
 $(document).ready (function () {
 	var containers = [
@@ -28,18 +29,7 @@ $(document).ready (function () {
 		}
 	];
 
-	$.getJSON ('/search', function (data) {
-		metadata = new Array ();
-
-		for (i = 0; i < data.length; i++) {
-			n = data [i][0];
-			n = n.replace ('#', ':');
-			n = n.substr (n.lastIndexOf ('/') + 1);
-			metadata.push (n);
-		}
-	});
-
-	$.getJSON ('/browse', function (data) {
+	$.getJSON (host + '/browse', function (data) {
 		for (i = 0; i < data.length; i++)
 			addConfFile (data[i]);
 	});
@@ -54,14 +44,14 @@ $(document).ready (function () {
 
 	$('#confslist').on ('click', '.runbutton', function () {
 		var name = $(this).parent ().attr ('id');
-		$.post ('/open', {confname: name}, function () {});
+		$.post (host + '/open', {confname: name}, function () {});
 	});
 
 	$('#confslist').on ('click', '.deletebutton', function () {
 		var name = $(this).parent ().attr ('id');
 
 		if (confirm ('Are you sure you want to remove the "' + name + '" configuration?')) {
-			$.post ('/remove', {confname: name}, function (resp) {
+			$.post (host + '/remove', {confname: name}, function (resp) {
 				$('#confslist #' + resp).remove ();
 			});
 		}
@@ -88,8 +78,30 @@ $(document).ready (function () {
 
 	$(document).on ('keyup.autocomplete', 'input.metadata', function () {
 		$(this).autocomplete ({
-			source : metadata
-		});
+			source : function(request, response) {
+					$.getJSON(host + "/properties?term=" + request.term, function(data) {
+						var array = $.map(data, function(m) {
+							return {
+								value: metaURLToName (m[0]),
+								label: m[1],
+								comment: m[2],
+								range: metaURLToName (m[3])
+							};
+						});
+						response (array);
+					});
+			},
+			select: function(event, ui) {
+				handleMetadataSelect (this, ui.item);
+			}
+
+		// trick got from
+		// http://salman-w.googlecode.com/svn/trunk/jquery-ui-autocomplete/custom-html-in-dropdown.html
+		}).data ('ui-autocomplete')._renderItem = function (ul, item) {
+			var $a = $("<a></a>").text (item.label);
+			$('<span class="propcomment"></span>').text (item.comment).appendTo ($a);
+			return $("<li></li>").append ($a).appendTo (ul);
+		};
 	});
 
 	$(document).on ('click', '.addfilterrow', function () {
@@ -119,7 +131,7 @@ $(document).ready (function () {
 
 		var contents = downloadableConf ();
 
-		$.post ('/save', {contents: contents, name: name}, function (resp) {
+		$.post (host + '/save', {contents: contents, name: name}, function (resp) {
 			if (resp == '0') {
 				$('.modal-body').empty ().append ('<div class="alert alert-danger">An error occurred saving the file!</div>');
 			}
@@ -135,7 +147,7 @@ $(document).ready (function () {
 
 	$('#saveModal').on ('click', '.runbutton', function () {
 		var name = $(this).attr ('id');
-		$.get ('/open', {confname: name}, function () {});
+		$.get (host + '/open', {confname: name}, function () {});
 	});
 
 	$('#saveModal').on('hidden.bs.modal', function (e) {
@@ -177,7 +189,8 @@ function filterBox () {
 			<option value="major">&gt;</option>\
 		</select>\
 \
-		' + commonInput ('') + '\
+		' + commonInput ('metavalue') + '\
+\
 		<span class="glyphicon glyphicon-plus addfilterrow"></span>\
 	</div>\
 </div>';
@@ -242,7 +255,7 @@ function downloadableFilter (node) {
 	filter.find ('.filterrow').each (function () {
 		metadata = $(this).find ('.metadata:first').val ();
 		operator = $(this).find ('select option:selected').val ();
-		value = $(this).find ('input:nth-child(2)').val ();
+		value = $(this).find ('.metavalue:first').val ();
 		ret += '<condition metadata="' + metadata + '" operator="' + operator + '" value="' + value + '" />';
 	});
 
@@ -253,11 +266,11 @@ function downloadableFilter (node) {
 function downloadableFolderContents (node) {
 	ret = '<content>';
 
-	node.find ('.fold').each (function () {
+	node.children ('.fold').each (function () {
 		ret += downloadableConfRec ($(this));
 	});
 
-	node.find ('.leaf').each (function () {
+	node.children ('.leaf').each (function () {
 		ret += downloadableConfRec ($(this));
 	});
 
@@ -266,10 +279,10 @@ function downloadableFolderContents (node) {
 }
 
 function downloadableConfRec (node) {
-	type = node.find ('input[name=type]').val ();
+	var type = node.children ('input[name=type]').val ();
 
-	xmlnode = '<' + type + '>';
-	contents = '<visualization_policy>';
+	var xmlnode = '<' + type + '>';
+	var contents = '<visualization_policy>';
 
 	switch (type) {
 		case 'root':
@@ -282,13 +295,13 @@ function downloadableConfRec (node) {
 			break;
 
 		case 'folder':
-			contents += '<name value="' + node.find ('.metadata:first').val () + '" />';
+			contents += '<name value="$self{' + node.find ('.metadata:first').val () + '}" />';
 			contents += downloadableFilter (node);
 			contents += downloadableFolderContents (node);
 			break;
 
 		case 'set_folder':
-			xmlnode = '<set_folder metadata="' + node.find ('.metadata:first').val () + '">';
+			xmlnode = '<set_folder metadata="$self{' + node.find ('.metadata:first').val () + '}">';
 			contents += downloadableFilter (node);
 			contents += downloadableFolderContents (node);
 			break;
@@ -297,7 +310,7 @@ function downloadableConfRec (node) {
 			break;
 
 		case 'file':
-			contents += '<name value="' + node.find ('.metadata:first').val () + '" />';
+			contents += '<name value="$self{' + node.find ('.metadata:first').val () + '}" />';
 			contents += downloadableFilter (node);
 			break;
 	}
@@ -307,9 +320,37 @@ function downloadableConfRec (node) {
 
 function downloadableConf () {
 	var string = '<?xml version="1.0" encoding="utf-8"?><conf xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="FSter.xsd"><exposing_tree>';
-
 	string += downloadableConfRec ($('#root'));
 	string += '</exposing_tree></conf>';
 	return string;
+}
+
+function metaURLToName (url) {
+	n = url;
+	n = n.replace ('#', ':');
+	n = n.substr (n.lastIndexOf ('/') + 1);
+	return n;
+}
+
+function handleMetadataSelect (widget, metadata) {
+	if ($(widget).parents ('.filterrow').len == 0)
+		return;
+
+	switch (metadata.range) {
+		case 'XMLSchema:integer':
+			input = commonInput ('metavalue metaint');
+			break;
+
+		case 'XMLSchema:double':
+			input = commonInput ('metavalue metadouble');
+			break;
+
+		case 'XMLSchema:boolean':
+		case 'XMLSchema:dateTime':
+		case 'XMLSchema:string':
+		default:
+			input = commonInput ('metavalue');
+			break;
+	}
 }
 

@@ -8,6 +8,7 @@ import subprocess
 import dbus
 import json
 import cherrypy
+import xml.dom.minidom
 
 import pygtk
 pygtk.require('2.0')
@@ -21,12 +22,14 @@ class TndServer (object):
 		tracker = bus.get_object('org.freedesktop.Tracker1', '/org/freedesktop/Tracker1/Resources')
 		self.dbusclient = dbus.Interface(tracker, dbus_interface='org.freedesktop.Tracker1.Resources')
 
-	def search(self):
-		query = "SELECT ?a WHERE {?a a rdf:Property}"
-		response = self.dbusclient.SparqlQuery(query)
+		query = "SELECT ?a ?l ?c ?r WHERE {?a a rdf:Property . ?a rdfs:label ?l . ?a rdfs:comment ?c . ?a rdfs:range ?r}"
+		self.propertiesResponse = self.dbusclient.SparqlQuery(query)
+
+	def properties(self, term):
+		response = [ f for f in self.propertiesResponse if term.lower() in f[1].lower() ]
 		return json.dumps(response)
 
-	search.exposed = True
+	properties.exposed = True
 
 	def browse(self):
 		path = os.path.expanduser("~/.fster/confs/")
@@ -46,8 +49,9 @@ class TndServer (object):
 		path = os.path.expanduser("~/.fster/confs/" + name)
 
 		try:
+			x = xml.dom.minidom.parseString(contents)
 			out_file = open(path,"w")
-			out_file.write(contents)
+			out_file.write(x.toprettyxml())
 			out_file.close()
 			return path
 		except IOError:
@@ -61,8 +65,9 @@ class TndServer (object):
 		mountpath = os.path.expanduser("~/.fster/mountpoints/" + confname)
 		if not os.path.isdir(mountpath):
 			os.makedirs(mountpath)
+		if not os.path.ismount (mountpath):
+			subprocess.call(('fster', '-c', confpath, mountpath))
 
-		subprocess.call(('fster', '-c', confpath, mountpath))
 		subprocess.call(('xdg-open', mountpath))
 
 	open.exposed = True
@@ -83,7 +88,11 @@ class TndServerThread (threading.Thread):
 		conf = {'/': {'tools.staticdir.on': True,
 		              'tools.staticdir.dir': current_dir}}
 
-		cherrypy.quickstart(TndServer(), '/', config=conf)
+		self.child = TndServer()
+		cherrypy.quickstart(self.child, '/', config=conf)
+
+	def stop(self):
+		cherrypy.engine.exit()
 
 class Browser:
 	default_site = "http://localhost:8080/index.html"
@@ -97,8 +106,9 @@ class Browser:
 	def __init__(self):
 		gobject.threads_init()
 		self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+		self.window.set_title("FSterUI")
 		self.window.set_resizable(False)
-		self.window.set_size_request(600, 600)
+		self.window.set_size_request(800, 600)
 		self.window.connect("delete_event", self.delete_event)
 		self.window.connect("destroy", self.destroy)
 
@@ -130,3 +140,4 @@ if __name__ == '__main__':
 	browser = Browser()
 	browser.main()
 
+	t.stop ()
